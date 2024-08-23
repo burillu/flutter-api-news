@@ -32,8 +32,9 @@ class _HomePageState extends State<HomePage> {
       final Map<String, dynamic> storyData = convert.jsonDecode(response.body);
       final String title = storyData["title"];
       final String author = storyData["by"];
+      final int vote = storyData["score"];
       const int index = 1;
-      return StoryModel(index: index, title: title, author: author);
+      return StoryModel(index: index, title: title, author: author, vote: vote);
     }).toList();
 
     final topStories = await Future.wait(responseTopTenStories);
@@ -62,11 +63,12 @@ class _HomePageState extends State<HomePage> {
             );
           } else {
             return Center(
-              child: ListView.builder(
+              child: ListView.separated(
                 itemCount: snapshot.data!.length,
                 itemBuilder: (context, index) => ListTile(
                   title: Text(snapshot.data![index].title),
                   subtitle: Text(snapshot.data![index].author),
+                  trailing: Text(snapshot.data![index].vote.toString()),
                   leading: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -78,6 +80,7 @@ class _HomePageState extends State<HomePage> {
                     ],
                   ),
                 ),
+                separatorBuilder: (context, index) => Divider(),
               ),
             );
           }

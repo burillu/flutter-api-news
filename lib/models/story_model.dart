@@ -2,8 +2,13 @@ class StoryModel {
   final int index;
   final String title;
   final String author;
+  final int vote;
 
-  StoryModel({required this.index, required this.title, required this.author});
+  StoryModel(
+      {required this.index,
+      required this.title,
+      required this.author,
+      required this.vote});
 }
 
 const jsonData = """{
