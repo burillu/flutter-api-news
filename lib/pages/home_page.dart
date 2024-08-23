@@ -9,9 +9,11 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  late Future<StoryModel> storyModelFuture;
-  final String url =
+  late Future<List<StoryModel>> storyModelFuture;
+  final String urlTopSories =
       "https://hacker-news.firebaseio.com/v0/topstories.json?print=pretty";
+  final String urlSingleStory =
+      "https://hacker-news.firebaseio.com/v0/item/8863.json?print=pretty";
 
   @override
   void initState() {
@@ -19,15 +21,23 @@ class _HomePageState extends State<HomePage> {
     storyModelFuture = getStoryData();
   }
 
-  Future<StoryModel> getStoryData() async {
-    final response = await http.get(Uri.parse(
-        "https://hacker-news.firebaseio.com/v0/item/8863.json?print=pretty"));
+  Future<List<StoryModel>> getStoryData() async {
+    final responseTopStoriesIds = await http.get(Uri.parse(urlTopSories));
+    final topStoriesIds =
+        convert.jsonDecode(responseTopStoriesIds.body) as List<dynamic>;
+    final responseTopTenStories = topStoriesIds.take(10).map((id) async {
+      final String url =
+          "https://hacker-news.firebaseio.com/v0/item/$id.json?print=pretty";
+      final response = await http.get(Uri.parse(url));
+      final Map<String, dynamic> storyData = convert.jsonDecode(response.body);
+      final String title = storyData["title"];
+      final String author = storyData["by"];
+      const int index = 1;
+      return StoryModel(index: index, title: title, author: author);
+    }).toList();
 
-    final Map<String, dynamic> storyData = convert.jsonDecode(response.body);
-    final String title = storyData["title"];
-    final String author = storyData["by"];
-    const int index = 1;
-    return StoryModel(index: index, title: title, author: author);
+    final topStories = await Future.wait(responseTopTenStories);
+    return topStories;
   }
 
   @override
@@ -43,7 +53,7 @@ class _HomePageState extends State<HomePage> {
         ));
   }
 
-  Widget body() => FutureBuilder(
+  Widget body() => FutureBuilder<List<StoryModel>>(
         future: storyModelFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
@@ -52,18 +62,21 @@ class _HomePageState extends State<HomePage> {
             );
           } else {
             return Center(
-              child: ListTile(
-                title: Text(snapshot.data!.title),
-                subtitle: Text(snapshot.data!.author),
-                leading: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      snapshot.data!.index.toString(),
-                      style:
-                          TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
-                    ),
-                  ],
+              child: ListView.builder(
+                itemCount: snapshot.data!.length,
+                itemBuilder: (context, index) => ListTile(
+                  title: Text(snapshot.data![index].title),
+                  subtitle: Text(snapshot.data![index].author),
+                  leading: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        (index + 1).toString(),
+                        style: TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.w800),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             );
